@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Bar } from "react-chartjs-2";
@@ -9,6 +10,7 @@ import UserSidebar from "./UserSidebar";
 import Column from "./Column";
 import SortableItem from "./SortableItem";
 import notificationSound from "./notification.mp3";
+import { FaFilter } from "react-icons/fa";
 
 const UserDashboard = () => {
   const [tasks, setTasks] = useState({
@@ -27,13 +29,23 @@ const UserDashboard = () => {
 
   useEffect(() => {
     const storedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    
+    // Add status field based on progress for compatibility with TaskFilter
+    const tasksWithStatus = storedTasks.map(task => ({
+      ...task,
+      status: task.progress > 80 ? 'complete' : 'incomplete'
+    }));
+    
+    // Update localStorage with tasks that have status field
+    localStorage.setItem("tasks", JSON.stringify(tasksWithStatus));
+    
     const categorizedTasks = {
-      "To Do": storedTasks.filter((task) => task.progress <= 40),
-      "In Progress": storedTasks.filter((task) => task.progress > 40 && task.progress <= 80),
-      Completed: storedTasks.filter((task) => task.progress > 80),
+      "To Do": tasksWithStatus.filter((task) => task.progress <= 40),
+      "In Progress": tasksWithStatus.filter((task) => task.progress > 40 && task.progress <= 80),
+      Completed: tasksWithStatus.filter((task) => task.progress > 80),
     };
     setTasks(categorizedTasks);
-    checkDeadlines(storedTasks);
+    checkDeadlines(tasksWithStatus);
   }, []);
 
   useEffect(() => {
@@ -85,7 +97,12 @@ const UserDashboard = () => {
       return updatedTasks;
     });
 
-    localStorage.setItem("tasks", JSON.stringify([...tasks["To Do"], ...tasks["In Progress"], ...tasks["Completed"]]));
+    // Ensure tasks have status field when saving
+    const allTasks = [...tasks["To Do"], ...tasks["In Progress"], ...tasks["Completed"]].map(task => ({
+      ...task,
+      status: task.progress > 80 ? 'complete' : 'incomplete'
+    }));
+    localStorage.setItem("tasks", JSON.stringify(allTasks));
   };
 
   // Task Analytics Chart Data (Bar Graph)
@@ -109,9 +126,18 @@ const UserDashboard = () => {
       <UserSidebar />
 
       <div className="flex-1 p-6">
-        <h2 className="text-4xl font-bold text-gray-900 mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-          🚀 User Dashboard
-        </h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-4xl font-bold text-gray-900 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
+            🚀 User Dashboard
+          </h2>
+          <Link
+            to="/user/task-filter"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            <FaFilter />
+            <span>Task Filter</span>
+          </Link>
+        </div>
         <ToastContainer position="top-right" autoClose={5000} hideProgressBar />
 
         {/* Kanban Board */}
