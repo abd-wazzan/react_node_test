@@ -1,10 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { motion } from "framer-motion";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeFAQ, setActiveFAQ] = useState(null);
+
+  useEffect(() => {
+    // Check if user has a role and redirect to appropriate dashboard
+    const userRole = localStorage.getItem("userRole");
+    
+    if (userRole === "admin") {
+      navigate("/admin/dashboard");
+    } else if (userRole === "user") {
+      navigate("/user/dashboard");
+    } else {
+      // If no role is set but user is authenticated, default to user dashboard
+      // This will only show the landing page content if user has no role yet
+      // Since the route is protected, unauthenticated users won't see this
+      if (user && !userRole) {
+        navigate("/user/dashboard");
+      }
+    }
+  }, [navigate, user]);
 
   const toggleFAQ = (index) => {
     setActiveFAQ(activeFAQ === index ? null : index);
@@ -50,7 +70,7 @@ const Landing = () => {
                 className="bg-white p-8 rounded-lg shadow-lg"
                 whileHover={{ scale: 1.05 }}
               >
-                <p className="text-lg text-gray-600 italic">“{testimonial.text}”</p>
+                <p className="text-lg text-gray-600 italic">"{testimonial.text}"</p>
                 <h4 className="mt-4 text-xl text-gray-800 font-semibold">- {testimonial.name}</h4>
               </motion.div>
             ))}
@@ -146,7 +166,7 @@ const Landing = () => {
       <div className="py-16 bg-gray-100">
         <div className="max-w-5xl mx-auto text-center px-6">
           <h2 className="text-4xl font-bold text-gray-800">📩 Contact Us</h2>
-          <p className="mt-4 text-lg text-gray-600">Have questions? We’d love to hear from you.</p>
+          <p className="mt-4 text-lg text-gray-600">Have questions? We'd love to hear from you.</p>
           <motion.form
             className="mt-8 space-y-4 max-w-3xl mx-auto"
             initial={{ opacity: 0 }}
